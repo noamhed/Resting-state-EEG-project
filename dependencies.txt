@@ -1,0 +1,4 @@
+things i downloaded: 
+mne 
+mypy 
+sklearn 
