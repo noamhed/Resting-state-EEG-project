@@ -5,3 +5,4 @@ sklearn
 pip install mne mne-icalabel
 onnxruntime
 ipykernel 
+eeglabio

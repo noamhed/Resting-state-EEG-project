@@ -1,3 +1,5 @@
+import os
+
 import matplotlib.pyplot as plt
 import mne
 from mne.io import read_raw_eeglab
@@ -87,3 +89,81 @@ def run_ica_with_iclabel(data: mne.io.Raw) -> mne.io.Raw:
     raw_cleaned.plot(title="Cleaned EEG Data", scalings="auto")
     plt.show()
     return raw_cleaned
+
+
+def run_ica_with_iclabel_and_save(file_path: str) -> None:
+    """Perform ICA decomposition on EEG data, use ICLabel for artifact classification,
+    and save the cleaned data to a specific directory with an updated name.
+
+    If a file with the same name already exists in the target folder, it will be replaced.
+
+    Parameters:
+    - file_path (str): Path to the .set EEG file.
+    """
+    # Determine the save path based on the file name
+    original_name = os.path.splitext(os.path.basename(file_path))[0]
+    if "a" in original_name.lower():
+        save_dir = "/Users/noam/Documents/myProjects/Resting-state-EEG-project/data/alzhimer/clean"
+    elif "c" in original_name.lower():
+        save_dir = "/Users/noam/Documents/myProjects/Resting-state-EEG-project/data/control/clean"
+    else:
+        save_dir = "/Users/noam/Documents/myProjects/Resting-state-EEG-project/data/frontotemporal/clean"
+
+    # Load the raw EEG data
+    raw = mne.io.read_raw_eeglab(file_path, preload=True)
+    montage = mne.channels.make_standard_montage("standard_1020")
+    raw.set_montage(montage, on_missing="ignore")
+
+    # Apply band-pass filter for ICA
+    raw.filter(0.5, 45, fir_design="firwin")
+
+    # Perform ICA using the RunICA algorithm
+    ica = ICA(n_components=19, method="fastica", random_state=42)
+    ica.fit(raw)
+
+    # Classify ICA components using ICLabel
+    labels = label_components(raw, ica, method="iclabel")
+
+    # Exclude components classified as 'eye blink' or 'muscle artifact'
+    exclude_labels = ["eye blink", "muscle artifact"]
+    exclude = [idx for idx, label in enumerate(labels["labels"]) if label in exclude_labels]
+    print(f"Excluding ICA components: {exclude}")
+    ica.exclude = exclude
+
+    # Apply ICA to remove artifacts
+    raw_cleaned = ica.apply(raw)
+
+    # Generate the new file name
+    cleaned_name = f"{original_name}_cleaned.set"
+    save_path = os.path.join(save_dir, cleaned_name)
+
+    # Ensure the save directory exists
+    os.makedirs(save_dir, exist_ok=True)
+
+    # Check if the file already exists and overwrite it
+    if os.path.exists(save_path):
+        print(f"File already exists and will be replaced: {save_path}")
+
+    # Save the cleaned data in .set format
+    mne.export.export_raw(save_path, raw_cleaned, fmt="eeglab")
+    print(f"Cleaned EEG data saved to: {save_path}")
+
+
+def process_dataset(dataset_dir: str) -> None:
+    """Process all .set files in the dataset directory.
+
+    Parameters:
+    - dataset_dir (str): Path to the root directory containing the .set files.
+    """
+    # Walk through the directory and its subdirectories
+    for root, _, files in os.walk(dataset_dir):
+        for file in files:
+            # Process only .set files
+            if file.endswith(".set"):
+                file_path = os.path.join(root, file)
+                try:
+                    # Call the function to process each file
+                    run_ica_with_iclabel_and_save(file_path)
+                except Exception as e:
+                    # Print error and continue with the next file
+                    print(f"Error processing {file_path}: {e}")
