@@ -2,3 +2,10 @@ things i downloaded:
 mne 
 mypy 
 sklearn 
+pyasr
+biopython
+setuptools
+pip install mne mne-icalabel
+pip install Pyrebase4
+onnxruntime
+ipykernel 
