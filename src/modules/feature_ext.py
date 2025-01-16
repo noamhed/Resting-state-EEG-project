@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
+from data_clean import read_data
 
 
 def plot_combined_frequency_domain(file_paths: list) -> None:
@@ -12,7 +13,7 @@ def plot_combined_frequency_domain(file_paths: list) -> None:
     all_psds = []
     for file_path in file_paths:
         # Load the raw EEG data
-        raw = mne.io.read_raw_eeglab(file_path, preload=True)
+        raw = read_data(file_path)
         montage = mne.channels.make_standard_montage("standard_1020")
         raw.set_montage(montage, on_missing="ignore")
 
@@ -73,12 +74,16 @@ def plot_psd_topography(file_paths: list, freq_band: tuple = (8, 12)) -> None:
     plt.show()
 
 
+def compute_psd(data):
+    data.compute_psd(fmax=50).plot(picks="data", exclude="bads", amplitude=False)
+    plt.show()
+
+
 # Example Usage
 file_paths = [
-    "src/data/alzhimer/clean/a001_cleaned.set",
-    "src/data/alzhimer/clean/a002_cleaned.set",
-    "src/data/alzhimer/clean/a003_cleaned.set",
-    "src/data/alzhimer/clean/a004_cleaned.set",
-    "src/data/alzhimer/clean/a005_cleaned.set",
+    "src/data/frontotemporal/clean/f001_cleaned.set",
+    "src/data/frontotemporal/clean/f002_cleaned.set",
+    "src/data/frontotemporal/clean/f003_cleaned.set",
+    "src/data/frontotemporal/clean/f004_cleaned.set",
+    "src/data/frontotemporal/clean/f005_cleaned.set",
 ]
-plot_psd_topography(file_paths, freq_band=(8, 12))
