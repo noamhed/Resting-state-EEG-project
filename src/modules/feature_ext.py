@@ -34,15 +34,15 @@ def combine_data(dataset_dir: str) -> mne.io.BaseRaw:
     if not raw_list:
         raise ValueError("Not a .set file")
 
-    # Concatenate all Raw objects
+    # Combine all .set files
     combined_raw = mne.concatenate_raws(raw_list)
 
     return combined_raw
 
 
 def compute_psd(data):
-    data.compute_psd(fmax=50).plot(picks="data", exclude="bads", amplitude=False)
+    data.compute_psd(fmax=45).plot(picks="data", exclude="bads", amplitude=False)
     plt.show()
 
 
-compute_psd(combine_data("src/data/frontotemporal/clean"))
+compute_psd(combine_data("src/data/control/clean"))
