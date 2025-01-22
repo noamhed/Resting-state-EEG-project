@@ -1,8 +1,8 @@
 import os
-
 import matplotlib.pyplot as plt
 import mne
 
+from data_clean import read_data, visualise_raw_data
 
 def combine_data(dataset_dir: str) -> mne.io.BaseRaw:
     """Merges all .set files in the given directory and its subdirectories into a single MNE Raw object.
@@ -13,7 +13,6 @@ def combine_data(dataset_dir: str) -> mne.io.BaseRaw:
     Returns:
         mne.io.BaseRaw - The combined Raw object containing data from all .set files.
     """
-    import mne
 
     raw_list = []
 
@@ -43,6 +42,4 @@ def combine_data(dataset_dir: str) -> mne.io.BaseRaw:
 def compute_psd(data):
     data.compute_psd(fmax=45).plot(picks="data", exclude="bads", amplitude=False)
     plt.show()
-
-
-compute_psd(combine_data("src/data/control/clean"))
+compute_psd(combine_data("src/data/alzhimer/clean"))

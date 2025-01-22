@@ -49,7 +49,7 @@ def ica_plot(data: mne.io.Raw) -> None:
     ica.plot_components(outlines="head")
 
 
-def run_ica_with_iclabel(data: mne.io.Raw) -> mne.io.Raw:
+def iclabel_visual(data: mne.io.Raw) -> mne.io.Raw:
     """Perform ICA decomposition on EEG data and use ICLabel for artifact classification.
     Automatically exclude components classified as 'eye blink' or 'muscle artifact'.
     Plots the ICA components in topography after cleaning and the cleaned EEG data.
@@ -91,7 +91,7 @@ def run_ica_with_iclabel(data: mne.io.Raw) -> mne.io.Raw:
     return raw_cleaned
 
 
-def run_ica_with_iclabel_and_save(file_path: str) -> None:
+def iclabel_save(file_path: str) -> None:
     """Perform ICA decomposition on EEG data, use ICLabel for artifact classification,
     and save the cleaned data to a specific directory with an updated name.
 
@@ -149,7 +149,7 @@ def run_ica_with_iclabel_and_save(file_path: str) -> None:
     print(f"Cleaned EEG data saved to: {save_path}")
 
 
-def process_dataset(dataset_dir: str) -> None:
+def clean_dataset(dataset_dir: str) -> None:
     """Process all .set files in the dataset directory.
 
     Parameters:
@@ -163,7 +163,7 @@ def process_dataset(dataset_dir: str) -> None:
                 file_path = os.path.join(root, file)
                 try:
                     # Call the function to process each file
-                    run_ica_with_iclabel_and_save(file_path)
+                    iclabel_save(file_path)
                 except Exception as e:
                     # Print error and continue with the next file
                     print(f"Error processing {file_path}: {e}")
