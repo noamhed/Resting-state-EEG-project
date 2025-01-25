@@ -1,5 +1,4 @@
 import os
-
 import matplotlib.pyplot as plt
 import mne
 from mne.io import read_raw_eeglab
