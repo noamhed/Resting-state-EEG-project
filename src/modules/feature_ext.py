@@ -1,4 +1,5 @@
 import os
+
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
@@ -38,12 +39,14 @@ def combine_data(dataset_dir: str) -> mne.io.BaseRaw:
 
     return combined_raw
 
+
 def compute_psd(data):
     data.compute_psd(fmax=45).plot(picks="data", exclude="bads", amplitude=False)
     plt.show()
+
+
 def compute_band_power(raw_data):
-    """
-    Compute the power in specific frequency bands for each channel and plot the results.
+    """Compute the power in specific frequency bands for each channel and plot the results.
 
     Args:
         raw_data (mne.io.BaseRaw): The raw EEG data.
@@ -53,12 +56,12 @@ def compute_band_power(raw_data):
     Returns:
         pd.DataFrame: DataFrame containing band power for each channel and band.
     """
-        # Define frequency bands
+    # Define frequency bands
     bands = {
-    "Delta (0.5–4 Hz)": (0.5, 4),
-    "Theta (4–8 Hz)": (4, 8),
-    "Alpha (8–13 Hz)": (8, 13),
-    "Beta (13–30 Hz)": (13, 30)
+        "Delta (0.5–4 Hz)": (0.5, 4),
+        "Theta (4–8 Hz)": (4, 8),
+        "Alpha (8–13 Hz)": (8, 13),
+        "Beta (13–30 Hz)": (13, 30),
     }
     # Compute the PSD for the raw data
     psd = raw_data.compute_psd(method="welch", fmax=45, verbose=False)
@@ -73,16 +76,3 @@ def compute_band_power(raw_data):
     # Create a DataFrame for band power
     band_power_df = pd.DataFrame(band_power, index=raw_data.ch_names)
     return band_power_df
-
-
-
-
-# Combine data and compute band power
-combined_raw = combine_data("src/data/alzhimer/clean")
-band_power_df = compute_band_power(combined_raw)
-# Save the band power matrix to a CSV file
-output_path = "/Users/noam/Documents/myProjects/Resting-state-EEG-project/data/band_power/band_power_matrix.csv"
-os.makedirs(os.path.dirname(output_path), exist_ok=True)
-band_power_df.to_csv(output_path)
-print("Band Power Matrix saved to:", output_path)
-print(band_power_df)
