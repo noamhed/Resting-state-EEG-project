@@ -76,3 +76,26 @@ def compute_band_power(raw_data):
     # Create a DataFrame for band power
     band_power_df = pd.DataFrame(band_power, index=raw_data.ch_names)
     return band_power_df
+
+def save_band_power_to_csv(raw_data, output_path):
+    """
+    Compute the band power for EEG data and save it to a CSV file.
+
+    Args:
+        raw_data (mne.io.BaseRaw): The raw EEG data.
+        output_path (str): The file path where the CSV file will be saved.
+    """
+    # Compute band power
+    band_power_df = compute_band_power(raw_data)
+    
+    # Save to CSV
+    band_power_df.to_csv(output_path)
+    print(f"Band power data saved to {output_path}")
+
+# Example Usage
+# Load your combined data
+combined_raw = combine_data("src/data/alzhimer/clean")
+
+# Save the band power matrix to a CSV file in your project directory
+output_csv_path = "src/data/alzhimer/band_power/band_power_matrix.csv"
+save_band_power_to_csv(combined_raw, output_csv_path)
