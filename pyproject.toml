@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "setuptools_scm[toml]>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "brainlytics"
+name = "Resting state eeg project"
 requires-python = ">=3.12"
 version = "1.0"
 dependencies = [
@@ -21,9 +21,9 @@ dependencies = [
 ]
 [project.optional-dependencies]
 dev = [
-    "brainlytics[lint]",
-    "brainlytics[test]",
-    "brainlytics[build]",
+    "[lint]",
+    "[test]",
+    "[build]",
 ]
 lint = [
     "ruff",

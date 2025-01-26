@@ -1,10 +1,9 @@
 import os
-
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
 import pandas as pd
-
+from data_clean import read_data
 
 def combine_data(dataset_dir: str) -> mne.io.BaseRaw:
     """Merges all .set files in the given directory and its subdirectories into a single MNE Raw object.
@@ -134,11 +133,9 @@ def plot_topomap_from_csv(csv_path):
     plt.colorbar(axes[-1].collections[0], ax=axes, orientation="horizontal", fraction=0.05, pad=0.1)
     plt.suptitle("Topographic Map of Band Power")
     plt.show()
-#Load your combined data
-combined_raw = combine_data("src/data/alzhimer/clean")
+# Load your combined data
+cleaned_data = read_data("/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/model_test/raw/f006.set")
 
-#Save the band power matrix to a CSV file in your project directory
-output_csv_path = "src/data/alzhimer/band_power/band_power_matrix.csv"
-save_band_power_to_csv(combined_raw, output_csv_path)
-plot_topomap_from_csv("/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/alzhimer/band_power/band_power_matrix.csv")
-
+# Save the band power matrix to a CSV file in your project directory
+output_csv_path = "/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/model_test/band_power/f006_bp.csv"
+save_band_power_to_csv(cleaned_data, output_csv_path)
