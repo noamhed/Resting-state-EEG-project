@@ -13,11 +13,14 @@ dependencies = [
     "torch==2.5.1",
     "matplotlib==3.9.2",
     "scipy==1.14.0",
-    "mne", # Added
-    "mne-icalabel", # Added
-    "onnxruntime", # Added
-    "ipykernel", # Added
-    "eeglabio" # Added
+    "mne==1.5.0", 
+    "mne-icalabel==0.6.0", 
+    "onnxruntime",
+    "ipykernel",
+    "eeglabio", 
+    "seaborn==0.13.0", 
+    "joblib==1.4.1", 
+    "notebook==7.1.2" 
 ]
 [project.optional-dependencies]
 dev = [
