@@ -144,3 +144,9 @@ def plot_topomap_from_csv(csv_path: str) -> None:
     plt.colorbar(axes[-1].collections[0], ax=axes, orientation="horizontal", fraction=0.05, pad=0.1)
     plt.suptitle("Topographic Map of Band Power")
     plt.show()
+
+
+save_band_power_to_csv(
+    combine_data("/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/frontotemporal/clean"),
+    "/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/frontotemporal/band_power/f_all_bp.csv",
+)
