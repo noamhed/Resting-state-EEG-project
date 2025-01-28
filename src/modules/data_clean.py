@@ -91,69 +91,59 @@ def iclabel_visual(data: mne.io.Raw) -> mne.io.Raw:
     return raw_cleaned
 
 
-def iclabel_save(file_path: str) -> None:
+def iclabel_save(file_path: str, dataset_dir: str) -> None:
     """Perform ICA decomposition on EEG data, use ICLabel for artifact classification,
-    and save the cleaned data to a specific directory with an updated name."""
+    and save the cleaned data relative to the dataset directory."""
     try:
-        # Determine the save path based on the file name
-        original_name = os.path.splitext(os.path.basename(file_path))[0]
-        if "a" in original_name.lower():
-            save_dir = "/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/model_test/clean"
-        elif "c" in original_name.lower():
-            save_dir = "/Users/noam/Documents/myProjects/Resting-state-EEG-project/data/control/clean"
-        else:
-            save_dir = "/Users/noam/Documents/myProjects/Resting-state-EEG-project/data/frontotemporal/clean"
-
-        # Ensure the save directory exists
+        # Determine the relative path for saving cleaned data
+        relative_path = os.path.relpath(file_path, dataset_dir)
+        save_dir = os.path.join(dataset_dir, os.path.dirname(relative_path).replace("raw", "clean"))
         os.makedirs(save_dir, exist_ok=True)
 
         # Load the raw EEG data
         raw = mne.io.read_raw_eeglab(file_path, preload=True)
 
-        # Perform preprocessing (filtering, ICA, etc.)
+        # Set a common average reference
+        raw.set_eeg_reference("average", projection=True)
+
+        # Adjust filter based on Nyquist frequency
+        nyquist_freq = raw.info["sfreq"] / 2
+        h_freq = min(45, nyquist_freq - 1)  # Keep h_freq below Nyquist limit
+        raw.filter(1, h_freq, fir_design="firwin")
+
         montage = mne.channels.make_standard_montage("standard_1020")
         raw.set_montage(montage, on_missing="ignore")
-        raw.filter(0.5, 45, fir_design="firwin")
 
+        # Perform ICA
         ica = ICA(n_components=19, method="fastica", random_state=42)
         ica.fit(raw)
-        labels = label_components(raw, ica, method="iclabel")
 
+        # Classify and exclude components
+        labels = label_components(raw, ica, method="iclabel")
         exclude_labels = ["eye blink", "muscle artifact"]
         exclude = [idx for idx, label in enumerate(labels["labels"]) if label in exclude_labels]
-        print(f"Excluding ICA components: {exclude}")
         ica.exclude = exclude
 
         raw_cleaned = ica.apply(raw)
 
-        # Save cleaned data
-        cleaned_name = f"{original_name}_cleaned.set"
+        # Save cleaned data (force overwrite)
+        cleaned_name = os.path.splitext(os.path.basename(file_path))[0] + "_cleaned.set"
         save_path = os.path.join(save_dir, cleaned_name)
-        mne.export.export_raw(save_path, raw_cleaned, fmt="eeglab")
+        mne.export.export_raw(save_path, raw_cleaned, fmt="eeglab", overwrite=True)
 
         print(f"Cleaned EEG data saved to: {save_path}")
 
     except Exception as e:
-        print(f"Error during file processing: {file_path}, Error: {e}")
-
-
+        print(f"Error in iclabel_save for {file_path}: {e}")
+        
 def clean_dataset(dataset_dir: str) -> None:
-    """Process all .set files in the dataset directory.
-
-    Parameters:
-    - dataset_dir (str): Path to the root directory containing the .set files.
-    """
-    # Walk through the directory and its subdirectories
+    """Process all .set files in the dataset directory."""
     for root, _, files in os.walk(dataset_dir):
         for file in files:
-            # Process only .set files
             if file.endswith(".set"):
                 file_path = os.path.join(root, file)
+                print(f"Processing file: {file_path}")
                 try:
-                    # Call the function to process each file
-                    iclabel_save(file_path)
+                    iclabel_save(file_path, dataset_dir)  # Pass dataset_dir
                 except Exception as e:
-                    # Print error and continue with the next file
                     print(f"Error processing {file_path}: {e}")
-
-
