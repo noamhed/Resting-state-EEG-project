@@ -1,4 +1,5 @@
 import os
+
 import matplotlib.pyplot as plt
 import mne
 from mne.io import read_raw_eeglab
@@ -102,7 +103,7 @@ def iclabel_save(file_path: str) -> None:
     # Determine the save path based on the file name
     original_name = os.path.splitext(os.path.basename(file_path))[0]
     if "a" in original_name.lower():
-        save_dir = "/Users/noam/Documents/myProjects/Resting-state-EEG-project/data/alzhimer/clean"
+        save_dir = "/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/model_test/clean"
     elif "c" in original_name.lower():
         save_dir = "/Users/noam/Documents/myProjects/Resting-state-EEG-project/data/control/clean"
     else:
@@ -166,3 +167,6 @@ def clean_dataset(dataset_dir: str) -> None:
                 except Exception as e:
                     # Print error and continue with the next file
                     print(f"Error processing {file_path}: {e}")
+
+
+# iclabel_save("/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/model_test/raw/a010.set")
