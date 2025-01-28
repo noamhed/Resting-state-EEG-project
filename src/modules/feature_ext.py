@@ -41,18 +41,18 @@ def combine_data(dataset_dir: str) -> mne.io.BaseRaw:
     return combined_raw
 
 
-def compute_psd(data: mne.io.BaseRaw) -> None:
-    """Compute and plot the Power Spectral Density (PSD) of the raw EEG data.
+def compute_psd(data: mne.io.BaseRaw, show: bool = True) -> None:
+    """Compute and optionally plot the Power Spectral Density (PSD) of the raw EEG data.
 
     Args:
         data (mne.io.BaseRaw): The raw EEG data.
-
-    Returns:
-        None
+        show (bool): Whether to display the plot. Defaults to True.
     """
-    data.compute_psd(fmax=45).plot(picks="data", exclude="bads", amplitude=False)
-    plt.show()
-
+    psd_fig = data.compute_psd(fmax=45).plot(picks="data", exclude="bads", amplitude=False)
+    if show:
+        plt.show()
+    else:
+        plt.close(psd_fig)  # Ensure the figure is closed when show=False
 
 def compute_band_power(raw_data: mne.io.BaseRaw) -> pd.DataFrame:
     """Compute the power in specific frequency bands for each channel.
@@ -105,15 +105,7 @@ def save_band_power_to_csv(raw_data: mne.io.BaseRaw, output_path: str) -> None:
 
 
 def plot_topomap_from_csv(csv_path: str) -> None:
-    """Reads a band power matrix CSV file and plots topographic maps for each frequency band.
-
-    Args:
-        csv_path (str): Path to the CSV file containing the band power matrix.
-                        The CSV file should have channel names as rows and band names as columns.
-
-    Returns:
-        None
-    """
+    """Reads a band power matrix CSV file and plots topographic maps for each frequency band."""
     # Load the band power matrix
     band_power_matrix: pd.DataFrame = pd.read_csv(csv_path, index_col=0)
 
@@ -125,20 +117,31 @@ def plot_topomap_from_csv(csv_path: str) -> None:
     channels_in_data: list[str] = band_power_matrix.index.tolist()
 
     # Get 2D positions (project from 3D)
-    positions_3d: np.ndarray = np.array([channel_positions[ch] for ch in channels_in_data if ch in channel_positions])
-    positions_2d: np.ndarray = positions_3d[:, :2]  # Take only the x and y coordinates
+    positions_3d = []
+    band_data = []
+    for ch in channels_in_data:
+        if ch in channel_positions:
+            positions_3d.append(channel_positions[ch])
+            band_data.append(band_power_matrix.loc[ch].values)
+        else:
+            print(f"Warning: Channel '{ch}' not found in standard montage.")
 
-    # Check if all channels are mapped; warn if some are missing
-    unmapped_channels: list[str] = [ch for ch in channels_in_data if ch not in channel_positions]
-    if unmapped_channels:
-        print(f"Warning: The following channels are not mapped to positions: {unmapped_channels}")
+    # Check for valid positions
+    if not positions_3d:
+        print("Error: No valid channel positions for topomap.")
+        return
+
+    positions_2d = np.array(positions_3d)[:, :2]
+    band_data = np.array(band_data)
 
     # Plot topomaps for each frequency band
     fig, axes = plt.subplots(1, len(band_power_matrix.columns), figsize=(15, 5))
+    if len(band_power_matrix.columns) == 1:
+        axes = [axes]  # Ensure axes is iterable for a single subplot
+
     for idx, band in enumerate(band_power_matrix.columns):
         ax = axes[idx]
-        band_data: np.ndarray = band_power_matrix[band].values  # Extract values for this band
-        mne.viz.plot_topomap(band_data, positions_2d, axes=ax, show=False, cmap="viridis", names=None)
+        mne.viz.plot_topomap(band_data[:, idx], positions_2d, axes=ax, show=False, cmap="viridis", names=None)
         ax.set_title(band)
 
     # Add a colorbar
@@ -146,11 +149,6 @@ def plot_topomap_from_csv(csv_path: str) -> None:
     plt.suptitle("Topographic Map of Band Power")
     plt.show()
 
-
-save_band_power_to_csv(
-    combine_data("/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/frontotemporal/clean"),
-    "/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/frontotemporal/band_power/f_all_bp.csv",
-)
 
 # Load data
 alz_data = pd.read_csv('/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/alzhimer/band_power/a_all_bp.csv')
