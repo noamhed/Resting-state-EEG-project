@@ -1,9 +1,10 @@
 import os
-
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
 import pandas as pd
+from mne.viz import plot_topomap
+from mne.channels import make_standard_montage
 
 
 def combine_data(dataset_dir: str) -> mne.io.BaseRaw:
@@ -149,4 +150,80 @@ def plot_topomap_from_csv(csv_path: str) -> None:
 save_band_power_to_csv(
     combine_data("/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/frontotemporal/clean"),
     "/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/frontotemporal/band_power/f_all_bp.csv",
+)
+
+# Load data
+alz_data = pd.read_csv('/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/alzhimer/band_power/a_all_bp.csv')
+ctrl_data = pd.read_csv('/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/control/band_power/c_all_bp.csv')
+ftd_data = pd.read_csv('/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/frontotemporal/band_power/f_all_bp.csv')
+
+
+# Rename 'Unnamed: 0' to 'Channel' for consistency
+for df in [alz_data, ctrl_data, ftd_data]:
+    df.rename(columns={"Unnamed: 0": "Channel"}, inplace=True)
+
+# Add group labels
+alz_data['Group'] = 'Alzheimer'
+ctrl_data['Group'] = 'Control'
+ftd_data['Group'] = 'Frontotemporal'
+
+# Combine all data into one DataFrame
+all_data = pd.concat([alz_data, ctrl_data, ftd_data], ignore_index=True)
+
+# Function to plot topomaps
+def plot_grouped_topomaps(data: pd.DataFrame, group_col: str, channel_col: str, value_cols: list[str], montage_name: str = "standard_1020"):
+    """
+    Plot topographic heatmaps for multiple groups and metrics (e.g., frequency bands).
+
+    Args:
+        data (pd.DataFrame): The input data containing groups, channels, and metric values.
+        group_col (str): Column name representing the groups (e.g., 'Group').
+        channel_col (str): Column name representing channel names (e.g., 'Channel').
+        value_cols (list[str]): List of column names for metrics to visualize (e.g., frequency bands).
+        montage_name (str): Name of the montage for channel positions (default: 'standard_1020').
+    """
+    # Assign a standard montage to get channel positions
+    montage = make_standard_montage(montage_name)
+    positions = montage.get_positions()["ch_pos"]
+
+    # Get unique groups and metrics
+    groups = data[group_col].unique()
+
+    # Plotting configuration
+    fig, axes = plt.subplots(len(groups), len(value_cols), figsize=(20, 10))
+
+    for i, group in enumerate(groups):
+        group_data = data[data[group_col] == group]
+        for j, metric in enumerate(value_cols):
+            # Get channel positions and metric values
+            channels = group_data[channel_col].values
+            values = group_data[metric].values
+            channel_positions = np.array([positions[ch][:2] for ch in channels if ch in positions])
+
+            # Plot topomap
+            ax = axes[i, j]
+            im, _ = plot_topomap(values, channel_positions, axes=ax, show=False, cmap="viridis")
+
+            # Set titles and labels
+            if i == 0:
+                ax.set_title(metric, fontsize=14)
+            if j == 0:
+                ax.set_ylabel(group, fontsize=14)
+
+    # Add a shared colorbar
+    cbar_ax = fig.add_axes([0.92, 0.3, 0.02, 0.4])
+    fig.colorbar(im, cax=cbar_ax, orientation="vertical", label="Relative PSD")
+    plt.suptitle("Scalp Heatmaps of PSD Across Groups and Frequency Bands", fontsize=16)
+    plt.tight_layout(rect=[0, 0, 0.9, 1])
+    plt.show()
+
+# Columns corresponding to frequency bands
+frequency_bands = ["Delta (0.5–4 Hz)", "Theta (4–8 Hz)", "Alpha (8–13 Hz)", "Beta (13–30 Hz)", "Gamma (30-45 Hz)"]
+
+# Plot the topomaps
+plot_grouped_topomaps(
+    data=all_data,
+    group_col="Group",
+    channel_col="Channel",
+    value_cols=frequency_bands
 )
