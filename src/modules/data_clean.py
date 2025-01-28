@@ -93,60 +93,48 @@ def iclabel_visual(data: mne.io.Raw) -> mne.io.Raw:
 
 def iclabel_save(file_path: str) -> None:
     """Perform ICA decomposition on EEG data, use ICLabel for artifact classification,
-    and save the cleaned data to a specific directory with an updated name.
+    and save the cleaned data to a specific directory with an updated name."""
+    try:
+        # Determine the save path based on the file name
+        original_name = os.path.splitext(os.path.basename(file_path))[0]
+        if "a" in original_name.lower():
+            save_dir = "/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/model_test/clean"
+        elif "c" in original_name.lower():
+            save_dir = "/Users/noam/Documents/myProjects/Resting-state-EEG-project/data/control/clean"
+        else:
+            save_dir = "/Users/noam/Documents/myProjects/Resting-state-EEG-project/data/frontotemporal/clean"
 
-    If a file with the same name already exists in the target folder, it will be replaced.
+        # Ensure the save directory exists
+        os.makedirs(save_dir, exist_ok=True)
 
-    Parameters:
-    - file_path (str): Path to the .set EEG file.
-    """
-    # Determine the save path based on the file name
-    original_name = os.path.splitext(os.path.basename(file_path))[0]
-    if "a" in original_name.lower():
-        save_dir = "/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/model_test/clean"
-    elif "c" in original_name.lower():
-        save_dir = "/Users/noam/Documents/myProjects/Resting-state-EEG-project/data/control/clean"
-    else:
-        save_dir = "/Users/noam/Documents/myProjects/Resting-state-EEG-project/data/frontotemporal/clean"
+        # Load the raw EEG data
+        raw = mne.io.read_raw_eeglab(file_path, preload=True)
 
-    # Load the raw EEG data
-    raw = mne.io.read_raw_eeglab(file_path, preload=True)
-    montage = mne.channels.make_standard_montage("standard_1020")
-    raw.set_montage(montage, on_missing="ignore")
+        # Perform preprocessing (filtering, ICA, etc.)
+        montage = mne.channels.make_standard_montage("standard_1020")
+        raw.set_montage(montage, on_missing="ignore")
+        raw.filter(0.5, 45, fir_design="firwin")
 
-    # Apply band-pass filter for ICA
-    raw.filter(0.5, 45, fir_design="firwin")
+        ica = ICA(n_components=19, method="fastica", random_state=42)
+        ica.fit(raw)
+        labels = label_components(raw, ica, method="iclabel")
 
-    # Perform ICA using the RunICA algorithm
-    ica = ICA(n_components=19, method="fastica", random_state=42)
-    ica.fit(raw)
+        exclude_labels = ["eye blink", "muscle artifact"]
+        exclude = [idx for idx, label in enumerate(labels["labels"]) if label in exclude_labels]
+        print(f"Excluding ICA components: {exclude}")
+        ica.exclude = exclude
 
-    # Classify ICA components using ICLabel
-    labels = label_components(raw, ica, method="iclabel")
+        raw_cleaned = ica.apply(raw)
 
-    # Exclude components classified as 'eye blink' or 'muscle artifact'
-    exclude_labels = ["eye blink", "muscle artifact"]
-    exclude = [idx for idx, label in enumerate(labels["labels"]) if label in exclude_labels]
-    print(f"Excluding ICA components: {exclude}")
-    ica.exclude = exclude
+        # Save cleaned data
+        cleaned_name = f"{original_name}_cleaned.set"
+        save_path = os.path.join(save_dir, cleaned_name)
+        mne.export.export_raw(save_path, raw_cleaned, fmt="eeglab")
 
-    # Apply ICA to remove artifacts
-    raw_cleaned = ica.apply(raw)
+        print(f"Cleaned EEG data saved to: {save_path}")
 
-    # Generate the new file name
-    cleaned_name = f"{original_name}_cleaned.set"
-    save_path = os.path.join(save_dir, cleaned_name)
-
-    # Ensure the save directory exists
-    os.makedirs(save_dir, exist_ok=True)
-
-    # Check if the file already exists and overwrite it
-    if os.path.exists(save_path):
-        print(f"File already exists and will be replaced: {save_path}")
-
-    # Save the cleaned data in .set format
-    mne.export.export_raw(save_path, raw_cleaned, fmt="eeglab")
-    print(f"Cleaned EEG data saved to: {save_path}")
+    except Exception as e:
+        print(f"Error during file processing: {file_path}, Error: {e}")
 
 
 def clean_dataset(dataset_dir: str) -> None:
@@ -169,4 +157,3 @@ def clean_dataset(dataset_dir: str) -> None:
                     print(f"Error processing {file_path}: {e}")
 
 
-# iclabel_save("/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/model_test/raw/a010.set")
