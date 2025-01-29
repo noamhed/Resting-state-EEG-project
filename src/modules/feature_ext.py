@@ -110,52 +110,6 @@ def save_band_power_to_csv(raw_data: mne.io.BaseRaw, output_path: str) -> None:
     band_power_df.to_csv(output_path)
 
 
-def plot_topomap_from_csv(csv_path: str) -> None:
-    """Reads a band power matrix CSV file and plots topographic maps for each frequency band."""
-    # Load the band power matrix
-    band_power_matrix: pd.DataFrame = pd.read_csv(csv_path, index_col=0)
-
-    # Define the standard 10-20 montage for channel positions
-    montage: mne.channels.DigMontage = mne.channels.make_standard_montage("standard_1020")
-
-    # Extract positions for the channels in the band power matrix
-    channel_positions: dict[str, np.ndarray] = montage.get_positions()["ch_pos"]
-    channels_in_data: list[str] = band_power_matrix.index.tolist()
-
-    # Get 2D positions (project from 3D)
-    positions_3d = []
-    band_data = []
-    for ch in channels_in_data:
-        if ch in channel_positions:
-            positions_3d.append(channel_positions[ch])
-            band_data.append(band_power_matrix.loc[ch].values)
-        else:
-            print(f"Warning: Channel '{ch}' not found in standard montage.")
-
-    # Check for valid positions
-    if not positions_3d:
-        print("Error: No valid channel positions for topomap.")
-        return
-
-    positions_2d = np.array(positions_3d)[:, :2]
-    band_data = np.array(band_data)
-
-    # Plot topomaps for each frequency band
-    fig, axes = plt.subplots(1, len(band_power_matrix.columns), figsize=(15, 5))
-    if len(band_power_matrix.columns) == 1:
-        axes = [axes]  # Ensure axes is iterable for a single subplot
-
-    for idx, band in enumerate(band_power_matrix.columns):
-        ax = axes[idx]
-        mne.viz.plot_topomap(band_data[:, idx], positions_2d, axes=ax, show=False, cmap="viridis", names=None)
-        ax.set_title(band)
-
-    # Add a colorbar
-    plt.colorbar(axes[-1].collections[0], ax=axes, orientation="horizontal", fraction=0.05, pad=0.1)
-    plt.suptitle("Topographic Map of Band Power")
-    plt.show()
-
-
 # Function to plot topomaps
 def plot_grouped_topomaps(
     data: pd.DataFrame, group_col: str, channel_col: str, value_cols: list[str], montage_name: str = "standard_1020"
