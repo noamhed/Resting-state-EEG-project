@@ -67,12 +67,12 @@ def train_model(
     return rf_model, x
 
 
-def classify_new_data(rf_model: RandomForestClassifier, X: pd.DataFrame, new_file: str) -> pd.DataFrame:
+def classify_new_data(rf_model: RandomForestClassifier, x: pd.DataFrame, new_file: str) -> pd.DataFrame:
     """Classify new data using a trained Random Forest model.
 
     Args:
         rf_model (RandomForestClassifier): Trained Random Forest model.
-        X (pd.DataFrame): Feature columns used during training.
+        x (pd.DataFrame): Feature columns used during training.
         new_file (str): Path to the new CSV data file.
 
     Returns:
@@ -82,7 +82,7 @@ def classify_new_data(rf_model: RandomForestClassifier, X: pd.DataFrame, new_fil
     new_data = pd.read_csv(new_file)
 
     # Ensure the new data has the same features as the training data
-    new_data = new_data[X.columns]
+    new_data = new_data[x.columns]
 
     # Use the trained model to predict labels for the new data
     new_predictions = rf_model.predict(new_data)

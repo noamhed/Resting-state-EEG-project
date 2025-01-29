@@ -16,9 +16,7 @@ def read_data(file_path: str) -> mne.io.BaseRaw:
     Returns:
     - mne.io.BaseRaw: Raw EEG data loaded into an MNE object.
     """
-    # Read the EEG data
-    read_eeg = read_raw_eeglab(file_path, preload=True)
-    return read_eeg
+    return read_raw_eeglab(file_path, preload=True)
 
 
 def visualise_raw_data(raw_eeg: mne.io.Raw) -> None:
@@ -51,16 +49,18 @@ def ica_plot(data: mne.io.Raw) -> None:
     plt.show()
 
 
-def iclabel_visual(data: mne.io.Raw) -> mne.io.Raw:
+def iclabel_visual(data: mne.io.Raw, plot: bool = True) -> mne.io.Raw:
     """Perform ICA decomposition on EEG data and use ICLabel for artifact classification.
+
     Automatically exclude components classified as 'eye blink' or 'muscle artifact'.
-    Plots the ICA components in topography after cleaning and the cleaned EEG data.
+    Optionally plots the ICA components and cleaned EEG data.
 
     Parameters:
-    - file_path (str): Path to the .set EEG file.
+    - data (mne.io.Raw): The raw EEG data.
+    - plot (bool): Whether to plot ICA components and cleaned EEG data (default: True).
 
     Returns:
-    - raw_cleaned (mne.io.Raw): The cleaned EEG data.
+    - mne.io.Raw: The cleaned EEG data.
     """
     montage = mne.channels.make_standard_montage("standard_1020")
     data.set_montage(montage, on_missing="ignore")
@@ -68,8 +68,8 @@ def iclabel_visual(data: mne.io.Raw) -> mne.io.Raw:
     # Apply band-pass filter for ICA
     data.filter(0.5, 45, fir_design="firwin", verbose="error")
 
-    # Perform ICA using the RunICA algorithm
-    ica = ICA(n_components=19, method="fastica", random_state=42, verbose="error")
+    # Perform ICA using FastICA algorithm
+    ica = ICA(n_components=0.99, method="fastica", random_state=42, verbose="error")  # Dynamic component selection
     ica.fit(data, verbose="error")
 
     # Classify ICA components using ICLabel
@@ -80,16 +80,19 @@ def iclabel_visual(data: mne.io.Raw) -> mne.io.Raw:
     exclude = [idx for idx, label in enumerate(labels["labels"]) if label in exclude_labels]
     ica.exclude = exclude
 
-    # Plot the topographies of remaining ICA components
-    ica.plot_components(title="Remaining ICA Components (Topography)", verbose="error")
-    plt.show()
+    if plot:
+        # Plot the topographies of remaining ICA components
+        ica.plot_components(title="Remaining ICA Components (Topography)", verbose="error")
+        plt.show()
 
     # Apply ICA to remove artifacts
     raw_cleaned = ica.apply(data, verbose="error")
 
-    # Plot the cleaned EEG data
-    raw_cleaned.plot(title="Cleaned EEG Data", scalings="auto", verbose="error")
-    plt.show()
+    if plot:
+        # Plot the cleaned EEG data
+        raw_cleaned.plot(title="Cleaned EEG Data", scalings="auto", verbose="error")
+        plt.show()
+
     return raw_cleaned
 
 
