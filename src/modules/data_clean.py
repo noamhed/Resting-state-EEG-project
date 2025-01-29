@@ -23,30 +23,32 @@ def read_data(file_path: str) -> mne.io.BaseRaw:
 
 def visualise_raw_data(raw_eeg: mne.io.Raw) -> None:
     """Visualize EEG data with a band-pass filter from 0.5-45 Hz."""
-    raw_eeg.filter(0.5, 45, fir_design="firwin")
+    raw_eeg.filter(0.5, 45, fir_design="firwin", verbose=False)
     raw_eeg.plot()
     plt.show()
 
 
 def ica_plot(data: mne.io.Raw) -> None:
-    """Plot ICA components for given raw EEG data.
+    """Plot ICA components for given raw EEG data without printing verbose messages.
 
     Parameters:
     - data (mne.io.Raw): The raw EEG data to process and plot ICA components.
     """
     # Apply the standard 10-20 montage
     montage = mne.channels.make_standard_montage("standard_1020")
-    data.set_montage(montage, on_missing="ignore")
+    data.set_montage(montage, on_missing="ignore", verbose=False)
 
     # Band-pass filter the data (for ICA preprocessing)
-    data.filter(0.5, 45, fir_design="firwin")
+    data.filter(0.5, 45, fir_design="firwin", verbose=False)
 
     # Fit ICA with 19 components
-    ica = ICA(n_components=19, random_state=0, method="fastica")
-    ica.fit(data)
+    ica = ICA(n_components=19, random_state=0, method="fastica", verbose=False)
+    ica.fit(data, verbose="error")
 
-    # Plot ICA components in topography
-    ica.plot_components(outlines="head")
+    ica.plot_components(outlines="head", verbose=False)
+
+    # Show the figure
+    plt.show()
 
 
 def iclabel_visual(data: mne.io.Raw) -> mne.io.Raw:
@@ -64,11 +66,11 @@ def iclabel_visual(data: mne.io.Raw) -> mne.io.Raw:
     data.set_montage(montage, on_missing="ignore")
 
     # Apply band-pass filter for ICA
-    data.filter(0.5, 45, fir_design="firwin")
+    data.filter(0.5, 45, fir_design="firwin", verbose="error")
 
     # Perform ICA using the RunICA algorithm
-    ica = ICA(n_components=19, method="fastica", random_state=42)
-    ica.fit(data)
+    ica = ICA(n_components=19, method="fastica", random_state=42, verbose="error")
+    ica.fit(data, verbose="error")
 
     # Classify ICA components using ICLabel
     labels = label_components(data, ica, method="iclabel")
@@ -79,21 +81,22 @@ def iclabel_visual(data: mne.io.Raw) -> mne.io.Raw:
     ica.exclude = exclude
 
     # Plot the topographies of remaining ICA components
-    ica.plot_components(title="Remaining ICA Components (Topography)")
+    ica.plot_components(title="Remaining ICA Components (Topography)", verbose="error")
     plt.show()
 
     # Apply ICA to remove artifacts
-    raw_cleaned = ica.apply(data)
+    raw_cleaned = ica.apply(data, verbose="error")
 
     # Plot the cleaned EEG data
-    raw_cleaned.plot(title="Cleaned EEG Data", scalings="auto")
+    raw_cleaned.plot(title="Cleaned EEG Data", scalings="auto", verbose="error")
     plt.show()
     return raw_cleaned
 
 
 def iclabel_save(file_path: str, dataset_dir: str) -> None:
     """Perform ICA decomposition on EEG data, use ICLabel for artifact classification,
-    and save the cleaned data relative to the dataset directory."""
+    and save the cleaned data relative to the dataset directory.
+    """
     try:
         # Determine the relative path for saving cleaned data
         relative_path = os.path.relpath(file_path, dataset_dir)
@@ -135,7 +138,8 @@ def iclabel_save(file_path: str, dataset_dir: str) -> None:
 
     except Exception as e:
         print(f"Error in iclabel_save for {file_path}: {e}")
-        
+
+
 def clean_dataset(dataset_dir: str) -> None:
     """Process all .set files in the dataset directory."""
     for root, _, files in os.walk(dataset_dir):
