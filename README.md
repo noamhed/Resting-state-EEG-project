@@ -11,7 +11,8 @@ The primary objectives are:
 
 The article this project is based on:  
 https://doi.org/10.3390/data8060095
-
+Link to the project summary:
+https://docs.google.com/document/d/1F2WnQxt0UDKGcPHNa_g_e-uUjoyk8av8girC3J80Kgc/edit?usp=sharing
 ## Project Structure:
 The project includes:
 
