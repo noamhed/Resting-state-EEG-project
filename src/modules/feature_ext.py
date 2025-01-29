@@ -1,10 +1,13 @@
+import logging
 import os
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
 import pandas as pd
-from mne.viz import plot_topomap
 from mne.channels import make_standard_montage
+from mne.viz import plot_topomap
 
 
 def combine_data(dataset_dir: str) -> mne.io.BaseRaw:
@@ -19,21 +22,24 @@ def combine_data(dataset_dir: str) -> mne.io.BaseRaw:
     raw_list: list[mne.io.BaseRaw] = []
 
     # Walk through the directory and its subdirectories
-    for root, _, files in os.walk(dataset_dir):
+    dataset_path = Path(dataset_dir)
+    for root, _, files in os.walk(dataset_path):
+        root_path = Path(root)  # Convert root to Path object
         for file in files:
             # Process only .set files
             if file.endswith(".set"):
-                file_path = os.path.join(root, file)
+                file_path = root_path / file  # Use Path's / operator
                 try:
                     # Load the .set file using MNE
                     raw: mne.io.BaseRaw = mne.io.read_raw_eeglab(file_path, preload=True)
                     raw_list.append(raw)
+                    logging.info("Successfully loaded file: %s", file_path)
                 except Exception as e:
-                    # Print error and continue with the next file
-                    print(f"Error with file {file_path}: {e}")
+                    # Log error and continue with the next file
+                    logging.exception("Error with file %s: %s", file_path, e)
 
     if not raw_list:
-        raise ValueError("No files found in the directory.")
+        raise ValueError
 
     # Combine all .set files
     combined_raw: mne.io.BaseRaw = mne.concatenate_raws(raw_list)
@@ -54,6 +60,7 @@ def compute_psd(data: mne.io.BaseRaw, show: bool = True) -> None:
     else:
         plt.close(psd_fig)  # Ensure the figure is closed when show=False
 
+
 def compute_band_power(raw_data: mne.io.BaseRaw) -> pd.DataFrame:
     """Compute the power in specific frequency bands for each channel.
 
@@ -65,10 +72,10 @@ def compute_band_power(raw_data: mne.io.BaseRaw) -> pd.DataFrame:
     """
     # Define frequency bands
     bands: dict[str, tuple[float, float]] = {
-        "Delta (0.5–4 Hz)": (0.5, 4),
-        "Theta (4–8 Hz)": (4, 8),
-        "Alpha (8–13 Hz)": (8, 13),
-        "Beta (13–30 Hz)": (13, 30),
+        "Delta (0.5-4 Hz)": (0.5, 4),
+        "Theta (4-8 Hz)": (4, 8),
+        "Alpha (8-13 Hz)": (8, 13),
+        "Beta (13-30 Hz)": (13, 30),
         "Gamma (30-45 Hz)": (30, 45),
     }
     # Compute the PSD for the raw data
@@ -101,7 +108,6 @@ def save_band_power_to_csv(raw_data: mne.io.BaseRaw, output_path: str) -> None:
 
     # Save to CSV
     band_power_df.to_csv(output_path)
-    print(f"Band power data saved to {output_path}")
 
 
 def plot_topomap_from_csv(csv_path: str) -> None:
@@ -150,28 +156,11 @@ def plot_topomap_from_csv(csv_path: str) -> None:
     plt.show()
 
 
-# Load data
-alz_data = pd.read_csv('/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/alzhimer/band_power/a_all_bp.csv')
-ctrl_data = pd.read_csv('/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/control/band_power/c_all_bp.csv')
-ftd_data = pd.read_csv('/Users/noam/Documents/myProjects/Resting-state-EEG-project/src/data/frontotemporal/band_power/f_all_bp.csv')
-
-
-# Rename 'Unnamed: 0' to 'Channel' for consistency
-for df in [alz_data, ctrl_data, ftd_data]:
-    df.rename(columns={"Unnamed: 0": "Channel"}, inplace=True)
-
-# Add group labels
-alz_data['Group'] = 'Alzheimer'
-ctrl_data['Group'] = 'Control'
-ftd_data['Group'] = 'Frontotemporal'
-
-# Combine all data into one DataFrame
-all_data = pd.concat([alz_data, ctrl_data, ftd_data], ignore_index=True)
-
 # Function to plot topomaps
-def plot_grouped_topomaps(data: pd.DataFrame, group_col: str, channel_col: str, value_cols: list[str], montage_name: str = "standard_1020"):
-    """
-    Plot topographic heatmaps for multiple groups and metrics (e.g., frequency bands).
+def plot_grouped_topomaps(
+    data: pd.DataFrame, group_col: str, channel_col: str, value_cols: list[str], montage_name: str = "standard_1020"
+) -> None:
+    """Plot topographic heatmaps for multiple groups and metrics (e.g., frequency bands).
 
     Args:
         data (pd.DataFrame): The input data containing groups, channels, and metric values.
@@ -194,8 +183,8 @@ def plot_grouped_topomaps(data: pd.DataFrame, group_col: str, channel_col: str, 
         group_data = data[data[group_col] == group]
         for j, metric in enumerate(value_cols):
             # Get channel positions and metric values
-            channels = group_data[channel_col].values
-            values = group_data[metric].values
+            channels = group_data[channel_col].to_numpy()
+            values = group_data[metric].to_numpy()
             channel_positions = np.array([positions[ch][:2] for ch in channels if ch in positions])
 
             # Plot topomap
@@ -214,14 +203,3 @@ def plot_grouped_topomaps(data: pd.DataFrame, group_col: str, channel_col: str, 
     plt.suptitle("Scalp Heatmaps of PSD Across Groups and Frequency Bands", fontsize=16)
     plt.tight_layout(rect=[0, 0, 0.9, 1])
     plt.show()
-
-# Columns corresponding to frequency bands
-frequency_bands = ["Delta (0.5–4 Hz)", "Theta (4–8 Hz)", "Alpha (8–13 Hz)", "Beta (13–30 Hz)", "Gamma (30-45 Hz)"]
-
-# Plot the topomaps
-plot_grouped_topomaps(
-    data=all_data,
-    group_col="Group",
-    channel_col="Channel",
-    value_cols=frequency_bands
-)

@@ -7,8 +7,6 @@ import mne
 import shutil
 import unittest
 import matplotlib.pyplot as plt
-
-
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from src.modules.feature_ext import (
     combine_data,
@@ -16,8 +14,6 @@ from src.modules.feature_ext import (
     save_band_power_to_csv,
     plot_topomap_from_csv,
 )
-
-
 def create_mock_eeg_data(output_dir: str, file_prefix: str, n_files: int = 2) -> None:
     """Generate mock .set EEG files for testing."""
     for i in range(n_files):

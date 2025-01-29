@@ -4,15 +4,15 @@ from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
 
 
-def load_and_label(files, label):
+def load_and_label(files: list[str], label: str) -> pd.DataFrame:
     """Load data from files and add a label to each dataset.
 
     Args:
-        files (list): List of file paths.
-        label (str): Label to assign to the data.
+        files (List[str]): List of file paths to CSV files.
+        label (str): Label to assign to all rows in the data.
 
     Returns:
-        DataFrame: Combined dataset with labels.
+        pd.DataFrame: Combined dataset with an additional "Label" column.
     """
     data = [pd.read_csv(file) for file in files]
     for df in data:
@@ -20,17 +20,22 @@ def load_and_label(files, label):
     return pd.concat(data, ignore_index=True)
 
 
-def train_model(files_frontotemporal, files_control, files_alzheimer):
+def train_model(
+    files_frontotemporal: list[str],
+    files_control: list[str],
+    files_alzheimer: list[str],
+) -> tuple[RandomForestClassifier, pd.DataFrame]:
     """Train a Random Forest model using labeled EEG data.
 
     Args:
-        files_frontotemporal (list): List of file paths for frontotemporal dementia data.
-        files_control (list): List of file paths for control data.
-        files_alzheimer (list): List of file paths for Alzheimer data.
+        files_frontotemporal (List[str]): File paths for frontotemporal dementia data.
+        files_control (List[str]): File paths for control group data.
+        files_alzheimer (List[str]): File paths for Alzheimer group data.
 
     Returns:
-        RandomForestClassifier: Trained Random Forest model.
-        DataFrame: Feature columns used in training.
+        Tuple[RandomForestClassifier, pd.DataFrame]:
+            - Trained Random Forest model.
+            - Feature DataFrame used for training.
     """
     # Load and label data
     data_frontotemporal = load_and_label(files_frontotemporal, "Frontotemporal Dementia")
@@ -44,34 +49,34 @@ def train_model(files_frontotemporal, files_control, files_alzheimer):
     full_data = full_data.loc[:, ~full_data.columns.str.contains("^Unnamed")]
 
     # Separate features and labels
-    X = full_data.drop("Label", axis=1)
+    x = full_data.drop("Label", axis=1)
     y = full_data["Label"]
 
     # Split the data into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=42)
 
     # Train a Random Forest model
     rf_model = RandomForestClassifier(random_state=42)
-    rf_model.fit(X_train, y_train)
+    rf_model.fit(x_train, y_train)
 
     # Evaluate the model
-    y_pred = rf_model.predict(X_test)
+    y_pred = rf_model.predict(x_test)
     print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
     print("\nClassification Report:\n", classification_report(y_test, y_pred))
 
-    return rf_model, X
+    return rf_model, x
 
 
-def classify_new_data(rf_model, X, new_file):
+def classify_new_data(rf_model: RandomForestClassifier, X: pd.DataFrame, new_file: str) -> pd.DataFrame:
     """Classify new data using a trained Random Forest model.
 
     Args:
         rf_model (RandomForestClassifier): Trained Random Forest model.
-        X (DataFrame): Feature columns used in training.
-        new_file (str): Path to the new data file.
+        X (pd.DataFrame): Feature columns used during training.
+        new_file (str): Path to the new CSV data file.
 
     Returns:
-        DataFrame: New data with predicted labels.
+        pd.DataFrame: New data with a "Predicted_Label" column containing the predictions.
     """
     # Load the new data
     new_data = pd.read_csv(new_file)
