@@ -1,3 +1,4 @@
+import sys
 import os
 import shutil
 import tempfile
@@ -7,8 +8,6 @@ from mne import create_info
 from mne.io import RawArray
 from mne.export import export_raw
 from mne.channels import make_standard_montage
-import sys
-
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from src.modules.data_clean import clean_dataset
 

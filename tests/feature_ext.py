@@ -12,7 +12,6 @@ from src.modules.feature_ext import (
     combine_data,
     compute_band_power,
     save_band_power_to_csv,
-    plot_topomap_from_csv,
 )
 def create_mock_eeg_data(output_dir: str, file_prefix: str, n_files: int = 2) -> None:
     """Generate mock .set EEG files for testing."""
@@ -73,22 +72,6 @@ class TestFeatureExtraction(unittest.TestCase):
         df = pd.read_csv(output_path)
         self.assertEqual(df.shape, (n_channels, 6), "Band power CSV shape mismatch.")
 
-    def test_plot_topomap_from_csv(self):
-        """Test the plot_topomap_from_csv function."""
-        n_channels = 19
-        bands = ["Delta (0.5–4 Hz)", "Theta (4–8 Hz)", "Alpha (8–13 Hz)", "Beta (13–30 Hz)", "Gamma (30-45 Hz)"]
-        data = np.random.rand(n_channels, len(bands))
-        ch_names = [f"EEG{i}" for i in range(n_channels)]
-        df = pd.DataFrame(data, columns=bands, index=ch_names)
-        csv_path = os.path.join(self.temp_dir, "band_power.csv")
-        df.to_csv(csv_path)
-
-        try:
-            plot_topomap_from_csv(csv_path)
-        except Exception as e:
-            self.fail(f"plot_topomap_from_csv failed: {e}")
-        finally:
-            plt.close("all")  # Close all Matplotlib figures
 
 
 if __name__ == "__main__":

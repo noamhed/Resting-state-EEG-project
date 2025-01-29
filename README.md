@@ -59,3 +59,29 @@ Link to the dataset after adding the runtime simulated data:
 This is the full dataset:  
 https://openneuro.org/datasets/ds004504/versions/1.0.8
 
+### Folder stracture 
+├── README.md
+├── data.egg-info
+│   ├── PKG-INFO
+│   ├── SOURCES.txt
+│   ├── dependency_links.txt
+│   └── top_level.txt
+├── main.ipynb
+├── main.py
+├── my_project.code-workspace
+├── pyproject.toml
+├── src
+│   ├── data
+│   │   ├── alzhimer
+│   │   ├── control
+│   │   ├── frontotemporal
+│   │   └── model_test
+│   └── modules
+│       ├── __init__.py
+│       ├── data_clean.py
+│       ├── feature_ext.py
+│       └── random_forest.py
+└── tests
+    ├── data_clean.py
+    ├── feature_ext.py
+    └── random_forest.py
