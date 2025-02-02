@@ -48,7 +48,6 @@ def ica_plot(data: mne.io.Raw) -> None:
     # Show the figure
     plt.show()
 
-
 def iclabel_visual(data: mne.io.Raw, plot: bool = True) -> mne.io.Raw:
     """Perform ICA decomposition on EEG data and use ICLabel for artifact classification.
 
@@ -94,7 +93,6 @@ def iclabel_visual(data: mne.io.Raw, plot: bool = True) -> mne.io.Raw:
         plt.show()
 
     return raw_cleaned
-
 
 def iclabel_save(file_path: str, dataset_dir: str) -> None:
     """Perform ICA decomposition on EEG data, use ICLabel for artifact classification,
